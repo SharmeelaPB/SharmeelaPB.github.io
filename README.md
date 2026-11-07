@@ -11,9 +11,9 @@ The portfolio is published through GitHub Pages.
 
 ### Registration and approval
 
-[Request student access](https://sharmeelapb.github.io/register.html) with a username/password, student nickname and parent/adult contact. Every applicant receives a unique database-generated referral code and remains pending until the teacher approves. Students can sign in with their username or referral code and password; the teacher keeps her existing email login. The teacher inbox includes an approval queue with approve, reject/revoke and hold actions.
+[Request student access](https://sharmeelapb.github.io/register.html) with an email address and password, student nickname and parent/adult contact. Every applicant receives a unique database-generated referral code and remains pending until the teacher approves. Students and the teacher sign in with email and password. Referral codes identify accounts for review and are not login credentials. The teacher inbox includes an approval queue with approve, reject/revoke and hold actions.
 
-**Activation required:** run the repeat-safe [approval migration](backend/approval-migration.sql) on the existing project and follow [approval setup](backend/APPROVAL-SETUP.md). Registration remains closed until the migration is installed and Auth is configured for username aliases. Existing teacher access is preserved; existing students must be approved. No secret keys are required.
+**Activation required:** run the repeat-safe [approval migration](backend/approval-migration.sql) on the existing project and follow [approval setup](backend/APPROVAL-SETUP.md). Registration remains closed until the migration is installed and Auth registration settings are configured. Existing teacher access is preserved; existing students must be approved. No secret keys are required.
 
 [Open the question desk](https://sharmeelapb.github.io/questions.html).
 

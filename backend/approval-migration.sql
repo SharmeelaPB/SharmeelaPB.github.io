@@ -24,28 +24,20 @@ drop policy if exists member_review_read on public.desk_member_reviews;
 create policy member_review_read on public.desk_member_reviews for select to authenticated using(public.desk_is_teacher());
 
 create or replace function public.desk_new_member() returns trigger language plpgsql security definer set search_path='' as $$
-declare requested text; nickname text; contact text;
+declare nickname text; contact text;
 begin
  if exists(select 1 from public.desk_teachers where user_id=new.id) then return new;end if;
- requested:=lower(coalesce(new.raw_user_meta_data->>'username',''));
  nickname:=trim(coalesce(new.raw_user_meta_data->>'student_name','Student'));
- contact:=trim(coalesce(new.raw_user_meta_data->>'guardian_contact',''));
- if requested<>'' then
-  if requested !~ '^[a-z][a-z0-9_]{3,23}$'
-   or lower(new.email)<>requested||'@students.sharmeelapb.invalid'
-   or coalesce(new.raw_user_meta_data->>'guardian_consent','false')<>'true'
-   or contact !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$'
-   then raise exception 'Invalid registration details';end if;
- end if;
- insert into public.desk_members(user_id,username,student_name,guardian_contact)
- values(new.id,nullif(requested,''),nickname,contact) on conflict(user_id) do nothing;
+ contact:=lower(trim(coalesce(new.email,'')));
+ insert into public.desk_members(user_id,student_name,guardian_contact)
+ values(new.id,nickname,contact) on conflict(user_id) do nothing;
  return new;
 end;$$;
 revoke all on function public.desk_new_member() from public,anon,authenticated;
 drop trigger if exists desk_new_member_trigger on auth.users;
 create trigger desk_new_member_trigger after insert on auth.users for each row execute function public.desk_new_member();
 -- Existing student accounts also require approval. Existing teacher access is preserved.
-insert into public.desk_members(user_id) select id from auth.users
+insert into public.desk_members(user_id,guardian_contact) select id,coalesce(email,'') from auth.users
  where not exists(select 1 from public.desk_teachers t where t.user_id=auth.users.id)
  on conflict(user_id) do nothing;
 
@@ -74,13 +66,8 @@ end;$$;
 revoke all on function public.desk_review_member(uuid,text) from public,anon;
 grant execute on function public.desk_review_member(uuid,text) to authenticated;
 
--- This returns only an internal login alias, never a real contact email.
-create or replace function public.desk_resolve_code(code text) returns text language sql stable security definer set search_path='' as $$
- select username||'@students.sharmeelapb.invalid' from public.desk_members
- where referral_code=upper(trim(code)) and username is not null;
-$$;
-revoke all on function public.desk_resolve_code(text) from public;
-grant execute on function public.desk_resolve_code(text) to anon,authenticated;
+-- Referral codes are references only. They do not resolve to login emails.
+drop function if exists public.desk_resolve_code(text);
 create or replace function public.desk_registration_ready() returns integer language sql immutable as $$select 1$$;
 revoke all on function public.desk_registration_ready() from public;
 grant execute on function public.desk_registration_ready() to anon,authenticated;
