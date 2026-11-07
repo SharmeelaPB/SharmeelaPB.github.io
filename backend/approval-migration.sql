@@ -6,7 +6,6 @@ create table if not exists public.desk_members(
  username text unique check(username is null or username ~ '^[a-z][a-z0-9_]{3,23}$'),
  student_name text not null default 'Student' check(length(student_name) between 1 and 80),
  guardian_contact text not null default '' check(length(guardian_contact)<=160),
- referral_code text not null unique default ('SPB-'||upper(substr(replace(gen_random_uuid()::text,'-',''),1,20))),
  status text not null default 'pending' check(status in ('pending','approved','rejected')),
  created_at timestamptz not null default now(), reviewed_at timestamptz, reviewed_by uuid references auth.users(id)
 );
@@ -66,7 +65,7 @@ end;$$;
 revoke all on function public.desk_review_member(uuid,text) from public,anon;
 grant execute on function public.desk_review_member(uuid,text) to authenticated;
 
--- Referral codes are references only. They do not resolve to login emails.
+-- Remove the unused legacy login lookup, if installed.
 drop function if exists public.desk_resolve_code(text);
 create or replace function public.desk_registration_ready() returns integer language sql immutable as $$select 1$$;
 revoke all on function public.desk_registration_ready() from public;
